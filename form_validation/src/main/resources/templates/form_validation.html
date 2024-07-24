@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Form Validation Assignment</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+</head>
+<body>
+    <div class="container mt-5">
+        <form action="submit" method="post" onsubmit="return validateForm()">
+            <div class="form-group row">
+                <label for="icNumber" class="col-sm-2 col-form-label">New IC Number</label>
+                <div class="col-sm-4">
+                    <input type="text" class="form-control" id="icNumber" name= "icNumber" maxlength="12" onchange="icNumHandler()" required>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="gender" class="col-sm-2 col-form-label">Gender</label>
+                <div class="col-sm-4">
+                    <select id="gender" name="gender" class="form-control" required>
+                        <option value="">select an option.</option>
+                        <option value="M">M</option>
+                        <option value="F">F</option>
+                    </select>
+                </div>
+                <label for="dob" class="col-sm-2 col-form-label">Date of Birth</label>
+                <div class="col-sm-4">
+                    <input type="date" class="form-control" id="dob" name="dob" readonly required>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="postcode" class="col-sm-2 col-form-label">Postcode</label>
+                <div class="col-sm-4">
+                    <select id="postcode" name="postcode" class="form-control" required onchange="updateTown()">
+                        <option value="">select an option.</option>
+                        <option th:each="postcodeTown : ${postcodeTowns}" th:value="${postcodeTown.postcode}" th:text="${postcodeTown.postcode}"></option>
+                    </select>
+                </div>
+                <label for="town" class="col-sm-2 col-form-label">Town</label>
+                <div class="col-sm-4">
+                    <input type="text" class="form-control" id="town" name = "town" required>
+                </div>
+            </div>
+            <div style = "
+            display: flex;
+            justify-content: center;
+            align-items: center;">
+
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+        </form>
+    </div>
+
+<script>
+    function isLeapYear(year){
+        return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+    }
+
+    function getMaxDays(year, month){
+        const monthInt = parseInt(month, 10);
+
+        if(monthInt === 2){
+            return isLeapYear(year) ? 29 : 28;
+        }
+        else if ([4, 6, 9, 11].includes(monthInt)){
+            return 30;
+        }
+        else{
+            return 31;
+        }
+    }
+
+    function icNumHandler(){
+        const icNumber = document.getElementById('icNumber').value;
+        const dob = document.getElementById('dob');
+
+        if(icNumber.length === 12){
+            const year = icNumber.substring(0, 2);
+            const month = icNumber.substring(2, 4);
+            const date = icNumber.substring(4, 6);
+
+            const fullYear = (parseInt(year) < 24 ? '20' : '19') + year;
+            const maxDate = getMaxDays(fullYear, month);
+
+            if(parseInt(month) > 0 && parseInt(month) <= 12 && parseInt(date) > 0 && parseInt(date) <= maxDate){
+                const formattedDate = fullYear + '-' + month + '-' + date;
+                dob.value = formattedDate;
+            } else {
+                dob.value = '';
+                alert("Invalid date or month for IC.");
+            }
+        } else {
+            dob.value = '';
+        }
+    }
+
+    function validateForm(){
+        if(document.getElementById('dob').value == null || document.getElementById('dob').value == ''){
+            document.getElementById('icNumber').value = '';
+            alert('There is no value of date of birth, check ic number.')
+            return false;
+        }
+        return true;
+    }
+
+    function updateTown() {
+        debugger
+        const postcode = document.getElementById('postcode').value;
+        const townInput = document.getElementById('town');
+
+        if (postcode) {
+            fetch('/findTownsByPostcode?postcode=' + postcode)
+                .then(response => response.json())
+                .then(data => {
+                    townInput.value = data[0].town;
+                })
+                .catch(error => {
+                    console.error('Error fetching town:', error);
+                    townInput.value = '';
+                });
+        } else {
+            townInput.value = '';
+        }
+    }
+</script>
+
+</body>
+</html>
